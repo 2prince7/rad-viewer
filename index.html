@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>RAD Viewer</title>
+
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>📋</text></svg>" />
+
+  <!-- Google Fonts - Montserrat -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- CodeMirror 5 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/theme/neo.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/javascript/javascript.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/xml/xml.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/htmlmixed/htmlmixed.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/mode/css/css.min.js"></script>
+
+  <!-- js-beautify for code formatting -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.14.9/beautify.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.14.9/beautify-css.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/js-beautify/1.14.9/beautify-html.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background-color: #f3f4f6;
+      min-height: 100vh;
+      padding: 1.5rem;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: white;
+      border-radius: 0.75rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 0.5rem;
+    }
+
+    .subtitle {
+      color: #6b7280;
+      text-align: center;
+      font-size: 0.875rem;
+    }
+
+    .section-title {
+      font-size: 1.125rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+
+    @media (max-width: 768px) {
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .info-box {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.5rem;
+      padding: 1rem;
+    }
+
+    .info-label {
+      color: #6b7280;
+      font-size: 0.875rem;
+      font-weight: 600;
+    }
+
+    .info-value {
+      color: #111827;
+      font-family: monospace;
+      margin-top: 0.25rem;
+      word-break: break-all;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 400;
+      font-size: 0.875rem;
+      cursor: pointer;
+      border: none;
+      transition: background-color 0.2s;
+    }
+
+    .btn-primary {
+      background-color: #2563eb;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: #1d4ed8;
+    }
+
+    .btn-secondary {
+      background-color: #6b7280;
+      color: white;
+      margin-left: 0.5rem;
+    }
+
+    .btn-secondary:hover {
+      background-color: #4b5563;
+    }
+
+    .btn-success {
+      background-color: #16a34a;
+      color: white;
+    }
+
+    .btn-success:hover {
+      background-color: #15803d;
+    }
+
+    .btn-small {
+      padding: 0.375rem 0.75rem;
+      font-size: 0.75rem;
+    }
+
+    .error-msg {
+      color: #dc2626;
+      font-weight: 600;
+      margin-top: 0.75rem;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    /* Editor wrapper */
+    .editor-wrapper {
+      border: 1px solid #e5e7eb;
+      border-radius: 0.5rem;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .editor-error .CodeMirror {
+      background-color: rgba(255, 77, 77, 0.08) !important;
+    }
+
+    /* Collapsible sections */
+    .section-header {
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.2s;
+      padding: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .section-header:hover {
+      background-color: #f3f4f6;
+    }
+
+    .section-header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .section-header-left .icon {
+      font-size: 1.25rem;
+    }
+
+    .section-header-left h2 {
+      font-size: 1.125rem;
+      font-weight: 700;
+    }
+
+    .section-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out;
+    }
+
+    .section-content.open {
+      max-height: none;
+      overflow: visible;
+    }
+
+    .section-content-inner {
+      padding: 0 1.5rem 1.5rem 1.5rem;
+    }
+
+    .chevron {
+      width: 1.5rem;
+      height: 1.5rem;
+      color: #9ca3af;
+      transition: transform 0.3s;
+    }
+
+    .chevron.rotated {
+      transform: rotate(180deg);
+    }
+
+    /* Badge styles */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .badge-blue {
+      background-color: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    .badge-green {
+      background-color: #dcfce7;
+      color: #15803d;
+    }
+
+    .badge-purple {
+      background-color: #f3e8ff;
+      color: #7c3aed;
+    }
+
+    .badge-orange {
+      background-color: #ffedd5;
+      color: #c2410c;
+    }
+
+    /* Element card */
+    .element-card {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 0.75rem;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .element-card:last-child {
+      margin-bottom: 0;
+    }
+
+    .element-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .element-card-header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .element-path {
+      color: #9ca3af;
+      font-size: 0.75rem;
+      font-family: monospace;
+    }
+
+    /* Code block header with copy button */
+    .code-block-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+    }
+
+    .code-block-header-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    /* Button row */
+    .btn-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 0.75rem;
+    }
+
+    /* CodeMirror customization */
+    .CodeMirror {
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 13px;
+    }
+
+    .collapsible-card {
+      background: white;
+      border-radius: 0.75rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+    }
+
+    /* Copy feedback */
+    .copy-feedback {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #16a34a;
+      color: white;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 1000;
+      animation: fadeInOut 2s ease-in-out;
+    }
+
+    @keyframes fadeInOut {
+      0% { opacity: 0; transform: translateY(20px); }
+      15% { opacity: 1; transform: translateY(0); }
+      85% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-20px); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="card">
+      <h1 class="title">📋 RAD Viewer</h1>
+      <p class="subtitle">View and format RAD JSON</p>
+    </div>
+
+    <!-- Input Section -->
+    <div class="card">
+      <div class="section-title">
+        📥 Input JSON
+      </div>
+
+      <div id="editorWrapper" class="editor-wrapper" style="margin-bottom: 1rem;">
+        <textarea id="jsonInput" placeholder="Paste your RAD configuration JSON here..."></textarea>
+      </div>
+
+      <div>
+        <button id="parseButton" class="btn btn-primary">Parse JSON</button>
+        <button id="clearButton" class="btn btn-secondary">Clear</button>
+      </div>
+
+      <p id="errorMsg" class="error-msg"></p>
+    </div>
+
+    <!-- Output Section -->
+    <div id="outputArea" class="hidden">
+      
+      <!-- RAD Info (Collapsible) -->
+      <div id="radInfoSection" class="collapsible-card">
+        <div class="section-header" onclick="toggleSection('radInfo')">
+          <div class="section-header-left">
+            <span class="icon">ℹ️</span>
+            <h2>RAD Info</h2>
+          </div>
+          <svg id="radInfoChevron" class="chevron rotated" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+        <div id="radInfoContent" class="section-content open">
+          <div class="section-content-inner">
+            <div class="grid-2">
+              <div class="info-box">
+                <span class="info-label">Name</span>
+                <p id="beanName" class="info-value">-</p>
+              </div>
+              <div class="info-box">
+                <span class="info-label">Module</span>
+                <p id="beanModule" class="info-value">-</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Page Function -->
+      <div id="pageFunctionSection" class="collapsible-card hidden">
+        <div class="section-header" onclick="toggleSection('pageFunction')">
+          <div class="section-header-left">
+            <span class="icon">⚡</span>
+            <h2>Page Function</h2>
+            <span class="badge badge-purple">Frontend JavaScript</span>
+          </div>
+          <svg id="pageFunctionChevron" class="chevron rotated" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+        <div id="pageFunctionContent" class="section-content open">
+          <div class="section-content-inner">
+            <div class="code-block-header">
+              <span></span>
+              <button class="btn btn-success btn-small" onclick="copyEditorContent('pageFunction')">Copy</button>
+            </div>
+            <div class="editor-wrapper">
+              <textarea id="pageFunctionEditor"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CSS Rules -->
+      <div id="cssSection" class="collapsible-card hidden">
+        <div class="section-header" onclick="toggleSection('css')">
+          <div class="section-header-left">
+            <span class="icon">🎨</span>
+            <h2>CSS Rules</h2>
+          </div>
+          <svg id="cssChevron" class="chevron rotated" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+        <div id="cssContent" class="section-content open">
+          <div class="section-content-inner">
+            <div class="code-block-header">
+              <span></span>
+              <button class="btn btn-success btn-small" onclick="copyEditorContent('css')">Copy</button>
+            </div>
+            <div class="editor-wrapper">
+              <textarea id="cssEditor"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- innerHTML Elements -->
+      <div id="innerHtmlSection" class="collapsible-card hidden">
+        <div class="section-header" onclick="toggleSection('innerHtml')">
+          <div class="section-header-left">
+            <span class="icon">🏷️</span>
+            <h2>innerHTML Elements</h2>
+            <span id="innerHtmlCount" class="badge badge-blue">0</span>
+          </div>
+          <svg id="innerHtmlChevron" class="chevron rotated" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+        <div id="innerHtmlContent" class="section-content open">
+          <div class="section-content-inner">
+            <!-- Content will be injected here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- RadBeans Events -->
+      <div id="beanEventsSection" class="collapsible-card hidden">
+        <div class="section-header" onclick="toggleSection('beanEvents')">
+          <div class="section-header-left">
+            <span class="icon">🔔</span>
+            <h2>RadBeans Events</h2>
+            <span id="beanEventsCount" class="badge badge-green">0</span>
+          </div>
+          <svg id="beanEventsChevron" class="chevron rotated" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </div>
+        <div id="beanEventsContent" class="section-content open">
+          <div class="section-content-inner">
+            <!-- Content will be injected here -->
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // Elements
+    const parseButton = document.getElementById('parseButton');
+    const clearButton = document.getElementById('clearButton');
+    const errorMsg = document.getElementById('errorMsg');
+    const outputArea = document.getElementById('outputArea');
+
+    // CodeMirror instances storage
+    const editors = {};
+
+    // Init Input CodeMirror
+    const textarea = document.getElementById('jsonInput');
+    const inputCm = CodeMirror.fromTextArea(textarea, {
+      mode: { name: "javascript", json: true },
+      lineNumbers: true,
+      theme: "neo",
+      lineWrapping: true,
+      autofocus: true,
+      indentUnit: 2,
+      tabSize: 2
+    });
+    inputCm.setSize(null, "300px");
+
+    // Show copy feedback
+    function showCopyFeedback() {
+      const feedback = document.createElement('div');
+      feedback.className = 'copy-feedback';
+      feedback.textContent = '✓ Copied to clipboard!';
+      document.body.appendChild(feedback);
+      setTimeout(() => feedback.remove(), 2000);
+    }
+
+    // Copy editor content - fixed version
+    function copyEditorContent(editorKey) {
+      const editor = editors[editorKey];
+      if (editor) {
+        const text = editor.getValue();
+        navigator.clipboard.writeText(text).then(() => {
+          showCopyFeedback();
+        }).catch(() => {
+          // Fallback for older browsers
+          const tempTextarea = document.createElement('textarea');
+          tempTextarea.value = text;
+          document.body.appendChild(tempTextarea);
+          tempTextarea.select();
+          document.execCommand('copy');
+          document.body.removeChild(tempTextarea);
+          showCopyFeedback();
+        });
+      }
+    }
+
+    // Copy innerHTML editor
+    function copyInnerHtmlEditorContent(index) {
+      const editor = editors[`innerHTML_${index}`];
+      if (editor) {
+        const text = editor.getValue();
+        navigator.clipboard.writeText(text).then(() => {
+          showCopyFeedback();
+        }).catch(() => {
+          const tempTextarea = document.createElement('textarea');
+          tempTextarea.value = text;
+          document.body.appendChild(tempTextarea);
+          tempTextarea.select();
+          document.execCommand('copy');
+          document.body.removeChild(tempTextarea);
+          showCopyFeedback();
+        });
+      }
+    }
+
+    // Copy bean event editor
+    function copyBeanEventEditorContent(index) {
+      const editor = editors[`beanEvent_${index}`];
+      if (editor) {
+        const text = editor.getValue();
+        navigator.clipboard.writeText(text).then(() => {
+          showCopyFeedback();
+        }).catch(() => {
+          const tempTextarea = document.createElement('textarea');
+          tempTextarea.value = text;
+          document.body.appendChild(tempTextarea);
+          tempTextarea.select();
+          document.execCommand('copy');
+          document.body.removeChild(tempTextarea);
+          showCopyFeedback();
+        });
+      }
+    }
+
+    // Toggle section visibility
+    function toggleSection(sectionName) {
+      const content = document.getElementById(sectionName + 'Content');
+      const chevron = document.getElementById(sectionName + 'Chevron');
+      
+      content.classList.toggle('open');
+      chevron.classList.toggle('rotated');
+      
+      // Refresh CodeMirror editors in section
+      setTimeout(() => {
+        Object.keys(editors).forEach(key => {
+          if (editors[key] && editors[key].refresh) {
+            editors[key].refresh();
+          }
+        });
+      }, 100);
+    }
+
+    // Calculate editor height based on content
+    function calculateEditorHeight(content, minHeight = 100, maxHeight = 600) {
+      const lineCount = (content.match(/\n/g) || []).length + 1;
+      const lineHeight = 20; // approximate line height in pixels
+      const calculatedHeight = lineCount * lineHeight + 20; // add some padding
+      return Math.min(Math.max(calculatedHeight, minHeight), maxHeight) + 'px';
+    }
+
+    // Extract all innerHTML elements recursively
+    function extractInnerHTMLElements(obj, path = '') {
+      const results = [];
+      
+      if (!obj || typeof obj !== 'object') return results;
+      
+      if (obj.innerHTML) {
+        results.push({
+          path: path || 'root',
+          innerHTML: obj.innerHTML,
+          type: obj.type || 'unknown'
+        });
+      }
+      
+      if (Array.isArray(obj.elements)) {
+        obj.elements.forEach((el, idx) => {
+          results.push(...extractInnerHTMLElements(el, `${path}/elements[${idx}]`));
+        });
+      }
+      
+      if (obj.editActivityLayoutModel) {
+        results.push(...extractInnerHTMLElements(obj.editActivityLayoutModel, 'editActivityLayoutModel'));
+      }
+      
+      return results;
+    }
+
+    // Format code using js-beautify
+    function formatCode(code, type) {
+      if (!code) return '';
+      
+      try {
+        if (type === 'css') {
+          return css_beautify(code, { indent_size: 2 });
+        } else if (type === 'html') {
+          return html_beautify(code, { indent_size: 2, wrap_line_length: 120 });
+        } else if (type === 'javascript') {
+          return js_beautify(code, { indent_size: 2, space_in_empty_paren: true });
+        }
+      } catch (e) {
+        console.error('Format error:', e);
+      }
+      
+      return code;
+    }
+
+    // Clear all dynamic editors
+    function clearEditors() {
+      Object.keys(editors).forEach(key => {
+        if (editors[key] && editors[key].toTextArea) {
+          editors[key].toTextArea();
+        }
+        delete editors[key];
+      });
+    }
+
+    // Parse button handler
+    parseButton.addEventListener('click', () => {
+      document.getElementById('editorWrapper').classList.remove('editor-error');
+      errorMsg.textContent = '';
+      
+      const text = inputCm.getValue().trim();
+      
+      if (!text) {
+        errorMsg.textContent = 'Please enter a JSON to parse';
+        return;
+      }
+
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        errorMsg.textContent = 'Invalid JSON: ' + e.message;
+        document.getElementById('editorWrapper').classList.add('editor-error');
+        return;
+      }
+
+      // Clear previous editors
+      clearEditors();
+
+      // Show output area
+      outputArea.classList.remove('hidden');
+
+      // RAD Info
+      document.getElementById('beanName').textContent = data.name || '-';
+      document.getElementById('beanModule').textContent = data.module || '-';
+
+      // innerHTML Elements
+      const innerHTMLElements = extractInnerHTMLElements(data);
+      const innerHtmlSection = document.getElementById('innerHtmlSection');
+      const innerHtmlContent = document.getElementById('innerHtmlContent').querySelector('.section-content-inner');
+      
+      if (innerHTMLElements.length > 0) {
+        innerHtmlSection.classList.remove('hidden');
+        document.getElementById('innerHtmlCount').textContent = innerHTMLElements.length;
+        
+        innerHtmlContent.innerHTML = '';
+        innerHTMLElements.forEach((el, idx) => {
+          const formattedHtml = formatCode(el.innerHTML, 'html');
+          const editorHeight = calculateEditorHeight(formattedHtml, 80, 400);
+          
+          const card = document.createElement('div');
+          card.className = 'element-card';
+          card.innerHTML = `
+            <div class="element-card-header">
+              <div class="element-card-header-left">
+                <span class="badge badge-orange">${el.type}</span>
+              </div>
+              <button class="btn btn-success btn-small" onclick="copyInnerHtmlEditorContent(${idx})">Copy</button>
+            </div>
+            <div class="editor-wrapper">
+              <textarea id="innerHTML_${idx}"></textarea>
+            </div>
+          `;
+          innerHtmlContent.appendChild(card);
+          
+          // Create editor after DOM insertion
+          setTimeout(() => {
+            const editorEl = document.getElementById(`innerHTML_${idx}`);
+            if (editorEl) {
+              editorEl.value = formattedHtml;
+              const cm = CodeMirror.fromTextArea(editorEl, {
+                mode: 'htmlmixed',
+                lineNumbers: true,
+                theme: "neo",
+                lineWrapping: true,
+                readOnly: false,
+                indentUnit: 2,
+                tabSize: 2
+              });
+              cm.setSize(null, editorHeight);
+              editors[`innerHTML_${idx}`] = cm;
+            }
+          }, 0);
+        });
+      } else {
+        innerHtmlSection.classList.add('hidden');
+      }
+
+      // CSS Rules
+      const cssRules = data.editActivityLayoutModel?.cssRules || '';
+      const cssSection = document.getElementById('cssSection');
+      
+      if (cssRules) {
+        cssSection.classList.remove('hidden');
+        setTimeout(() => {
+          const formattedCss = formatCode(cssRules, 'css');
+          const cssTextarea = document.getElementById('cssEditor');
+          cssTextarea.value = formattedCss;
+          editors['css'] = CodeMirror.fromTextArea(cssTextarea, {
+            mode: 'css',
+            lineNumbers: true,
+            theme: "neo",
+            lineWrapping: true,
+            readOnly: false,
+            indentUnit: 2,
+            tabSize: 2
+          });
+          editors['css'].setSize(null, "400px");
+        }, 0);
+      } else {
+        cssSection.classList.add('hidden');
+      }
+
+      // Page Function
+      const pageFunction = data.editActivityLayoutModel?.pageFunction || '';
+      const pageFunctionSection = document.getElementById('pageFunctionSection');
+      
+      if (pageFunction) {
+        pageFunctionSection.classList.remove('hidden');
+        setTimeout(() => {
+          const formattedJs = formatCode(pageFunction, 'javascript');
+          const pfTextarea = document.getElementById('pageFunctionEditor');
+          pfTextarea.value = formattedJs;
+          editors['pageFunction'] = CodeMirror.fromTextArea(pfTextarea, {
+            mode: 'javascript',
+            lineNumbers: true,
+            theme: "neo",
+            lineWrapping: true,
+            readOnly: false,
+            indentUnit: 2,
+            tabSize: 2
+          });
+          editors['pageFunction'].setSize(null, "500px");
+        }, 0);
+      } else {
+        pageFunctionSection.classList.add('hidden');
+      }
+
+      // Bean Events
+      const beanEvents = data.eventsActivityConfigsData?.beanEvents || [];
+      const beanEventsSection = document.getElementById('beanEventsSection');
+      const beanEventsContent = document.getElementById('beanEventsContent').querySelector('.section-content-inner');
+      
+      if (beanEvents.length > 0) {
+        beanEventsSection.classList.remove('hidden');
+        document.getElementById('beanEventsCount').textContent = beanEvents.length;
+        
+        beanEventsContent.innerHTML = '';
+        beanEvents.forEach((event, idx) => {
+          const card = document.createElement('div');
+          card.className = 'element-card';
+          card.innerHTML = `
+            <div class="element-card-header">
+              <div class="element-card-header-left">
+                <span class="badge badge-green">${event.eventType || 'UNKNOWN'}</span>
+              </div>
+              <button class="btn btn-success btn-small" onclick="copyBeanEventEditorContent(${idx})">Copy</button>
+            </div>
+            <div class="editor-wrapper">
+              <textarea id="beanEvent_${idx}"></textarea>
+            </div>
+          `;
+          beanEventsContent.appendChild(card);
+          
+          // Create editor after DOM insertion
+          setTimeout(() => {
+            const editorEl = document.getElementById(`beanEvent_${idx}`);
+            if (editorEl && event.eventFn) {
+              const formattedJs = formatCode(event.eventFn, 'javascript');
+              editorEl.value = formattedJs;
+              const cm = CodeMirror.fromTextArea(editorEl, {
+                mode: 'javascript',
+                lineNumbers: true,
+                theme: "neo",
+                lineWrapping: true,
+                readOnly: false,
+                indentUnit: 2,
+                tabSize: 2
+              });
+              cm.setSize(null, "400px");
+              editors[`beanEvent_${idx}`] = cm;
+            }
+          }, 0);
+        });
+      } else {
+        beanEventsSection.classList.add('hidden');
+      }
+
+      // Scroll to output
+      setTimeout(() => {
+        outputArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    });
+
+    // Clear button handler
+    clearButton.addEventListener('click', () => {
+      inputCm.setValue('');
+      errorMsg.textContent = '';
+      document.getElementById('editorWrapper').classList.remove('editor-error');
+      outputArea.classList.add('hidden');
+      clearEditors();
+    });
+
+    // Remove error state when user types
+    inputCm.on('change', () => {
+      document.getElementById('editorWrapper').classList.remove('editor-error');
+      errorMsg.textContent = '';
+    });
+
+    // Refresh CodeMirror on window resize
+    window.addEventListener('resize', () => {
+      inputCm.refresh();
+      Object.values(editors).forEach(cm => {
+        if (cm && cm.refresh) cm.refresh();
+      });
+    });
+  </script>
+</body>
+</html>
