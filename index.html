@@ -6,7 +6,7 @@
   <title>RAD Viewer</title>
 
   <!-- Favicon -->
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='0.9em' font-size='90'>📋</text></svg>" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232563eb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='16 18 22 12 16 6'/><polyline points='8 6 2 12 8 18'/><circle cx='12' cy='12' r='2.5'/><path d='M12 9.5V8'/><path d='M12 16v-1.5'/><path d='M9.5 12H8'/><path d='M16 12h-1.5'/></svg>" />
 
   <!-- Google Fonts - Montserrat -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -59,6 +59,10 @@
       font-weight: 700;
       text-align: center;
       margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
     }
 
     .subtitle {
@@ -199,7 +203,16 @@
     }
 
     .section-header-left .icon {
-      font-size: 1.25rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.25rem;
+      height: 1.25rem;
+    }
+
+    .section-header-left .icon svg {
+      width: 100%;
+      height: 100%;
     }
 
     .section-header-left h2 {
@@ -354,32 +367,86 @@
       85% { opacity: 1; transform: translateY(0); }
       100% { opacity: 0; transform: translateY(-20px); }
     }
+
+    /* Inline SVG icon styles */
+    .svg-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.25em;
+      height: 1.25em;
+      vertical-align: middle;
+      flex-shrink: 0;
+    }
+
+    .svg-icon svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .title .svg-icon {
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+
+    .section-title .svg-icon {
+      width: 1.25rem;
+      height: 1.25rem;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <!-- Header -->
     <div class="card">
-      <h1 class="title">📋 RAD Viewer</h1>
+      <h1 class="title">
+        <span class="svg-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="16 18 22 12 16 6"/>
+            <polyline points="8 6 2 12 8 18"/>
+            <circle cx="12" cy="12" r="2.5"/>
+            <path d="M12 9.5V8"/>
+            <path d="M12 16v-1.5"/>
+            <path d="M9.5 12H8"/>
+            <path d="M16 12h-1.5"/>
+          </svg>
+        </span>
+        RAD Viewer
+      </h1>
       <p class="subtitle">View and format RAD JSON</p>
     </div>
 
     <!-- Input Section -->
-    <div class="card">
-      <div class="section-title">
-        📥 Input JSON
+    <div id="inputSection" class="collapsible-card">
+      <div class="section-header" onclick="toggleSection('input')">
+        <div class="section-header-left">
+          <span class="icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+          </span>
+          <h2>Input JSON</h2>
+        </div>
+        <svg id="inputChevron" class="chevron rotated" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
       </div>
+      <div id="inputContent" class="section-content open">
+        <div class="section-content-inner">
+          <div id="editorWrapper" class="editor-wrapper" style="margin-bottom: 1rem;">
+            <textarea id="jsonInput" placeholder="Paste your RAD configuration JSON here..."></textarea>
+          </div>
 
-      <div id="editorWrapper" class="editor-wrapper" style="margin-bottom: 1rem;">
-        <textarea id="jsonInput" placeholder="Paste your RAD configuration JSON here..."></textarea>
+          <div>
+            <button id="parseButton" class="btn btn-primary">Parse JSON</button>
+            <button id="clearButton" class="btn btn-secondary">Clear</button>
+          </div>
+
+          <p id="errorMsg" class="error-msg"></p>
+        </div>
       </div>
-
-      <div>
-        <button id="parseButton" class="btn btn-primary">Parse JSON</button>
-        <button id="clearButton" class="btn btn-secondary">Clear</button>
-      </div>
-
-      <p id="errorMsg" class="error-msg"></p>
     </div>
 
     <!-- Output Section -->
@@ -389,7 +456,13 @@
       <div id="radInfoSection" class="collapsible-card">
         <div class="section-header" onclick="toggleSection('radInfo')">
           <div class="section-header-left">
-            <span class="icon">ℹ️</span>
+            <span class="icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12.01" y2="8"/>
+              </svg>
+            </span>
             <h2>RAD Info</h2>
           </div>
           <svg id="radInfoChevron" class="chevron rotated" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -416,7 +489,11 @@
       <div id="pageFunctionSection" class="collapsible-card hidden">
         <div class="section-header" onclick="toggleSection('pageFunction')">
           <div class="section-header-left">
-            <span class="icon">⚡</span>
+            <span class="icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+              </svg>
+            </span>
             <h2>Page Function</h2>
             <span class="badge badge-purple">Frontend JavaScript</span>
           </div>
@@ -441,7 +518,14 @@
       <div id="cssSection" class="collapsible-card hidden">
         <div class="section-header" onclick="toggleSection('css')">
           <div class="section-header-left">
-            <span class="icon">🎨</span>
+            <span class="icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7" rx="1"/>
+                <rect x="14" y="3" width="7" height="7" rx="1"/>
+                <rect x="14" y="14" width="7" height="7" rx="1"/>
+                <rect x="3" y="14" width="7" height="7" rx="1"/>
+              </svg>
+            </span>
             <h2>CSS Rules</h2>
           </div>
           <svg id="cssChevron" class="chevron rotated" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -465,7 +549,12 @@
       <div id="innerHtmlSection" class="collapsible-card hidden">
         <div class="section-header" onclick="toggleSection('innerHtml')">
           <div class="section-header-left">
-            <span class="icon">🏷️</span>
+            <span class="icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#c2410c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="16 18 22 12 16 6"/>
+                <polyline points="8 6 2 12 8 18"/>
+              </svg>
+            </span>
             <h2>innerHTML Elements</h2>
             <span id="innerHtmlCount" class="badge badge-blue">0</span>
           </div>
@@ -484,7 +573,12 @@
       <div id="beanEventsSection" class="collapsible-card hidden">
         <div class="section-header" onclick="toggleSection('beanEvents')">
           <div class="section-header-left">
-            <span class="icon">🔔</span>
+            <span class="icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+              </svg>
+            </span>
             <h2>RadBeans Events</h2>
             <span id="beanEventsCount" class="badge badge-green">0</span>
           </div>
@@ -520,8 +614,9 @@
       theme: "neo",
       lineWrapping: true,
       autofocus: true,
-      indentUnit: 2,
-      tabSize: 2
+      indentUnit: 4,
+      tabSize: 4,
+      indentWithTabs: true
     });
     inputCm.setSize(null, "300px");
 
@@ -534,7 +629,7 @@
       setTimeout(() => feedback.remove(), 2000);
     }
 
-    // Copy editor content - fixed version
+    // Copy editor content
     function copyEditorContent(editorKey) {
       const editor = editors[editorKey];
       if (editor) {
@@ -542,7 +637,6 @@
         navigator.clipboard.writeText(text).then(() => {
           showCopyFeedback();
         }).catch(() => {
-          // Fallback for older browsers
           const tempTextarea = document.createElement('textarea');
           tempTextarea.value = text;
           document.body.appendChild(tempTextarea);
@@ -602,6 +696,7 @@
       
       // Refresh CodeMirror editors in section
       setTimeout(() => {
+        inputCm.refresh();
         Object.keys(editors).forEach(key => {
           if (editors[key] && editors[key].refresh) {
             editors[key].refresh();
@@ -613,8 +708,8 @@
     // Calculate editor height based on content
     function calculateEditorHeight(content, minHeight = 100, maxHeight = 600) {
       const lineCount = (content.match(/\n/g) || []).length + 1;
-      const lineHeight = 20; // approximate line height in pixels
-      const calculatedHeight = lineCount * lineHeight + 20; // add some padding
+      const lineHeight = 20;
+      const calculatedHeight = lineCount * lineHeight + 20;
       return Math.min(Math.max(calculatedHeight, minHeight), maxHeight) + 'px';
     }
 
@@ -645,23 +740,59 @@
       return results;
     }
 
-    // Format code using js-beautify
+    // Format code using js-beautify (with TABS)
+    // Convert leading spaces to tabs: each group of N spaces becomes one tab
+    function spacesToTabs(code, spacesPerTab) {
+      return code.split('\n').map(line => {
+        let leadingSpaces = 0;
+        while (leadingSpaces < line.length && line[leadingSpaces] === ' ') {
+          leadingSpaces++;
+        }
+        if (leadingSpaces === 0) return line;
+        const tabs = Math.floor(leadingSpaces / spacesPerTab);
+        const rest = leadingSpaces % spacesPerTab;
+        return '\t'.repeat(tabs) + ' '.repeat(rest) + line.slice(leadingSpaces);
+      }).join('\n');
+    }
+
     function formatCode(code, type) {
       if (!code) return '';
       
+      // Step 1: beautify with SPACES (predictable unit = 2 spaces per indent)
+      const baseOpts = {
+        indent_with_tabs: false,
+        indent_size: 2
+      };
+
+      let result = code;
       try {
         if (type === 'css') {
-          return css_beautify(code, { indent_size: 2 });
+          result = css_beautify(code, { ...baseOpts });
         } else if (type === 'html') {
-          return html_beautify(code, { indent_size: 2, wrap_line_length: 120 });
+          result = html_beautify(code, { ...baseOpts, wrap_line_length: 120 });
         } else if (type === 'javascript') {
-          return js_beautify(code, { indent_size: 2, space_in_empty_paren: true });
+          result = js_beautify(code, { ...baseOpts, space_in_empty_paren: true });
         }
       } catch (e) {
         console.error('Format error:', e);
       }
       
-      return code;
+      // Step 2: convert every 2 leading spaces → 1 tab
+      return spacesToTabs(result, 2);
+    }
+
+    // Common CodeMirror options
+    function cmOptions(mode) {
+      return {
+        mode: mode,
+        lineNumbers: true,
+        theme: "neo",
+        lineWrapping: true,
+        readOnly: false,
+        indentUnit: 4,
+        tabSize: 4,
+        indentWithTabs: true
+      };
     }
 
     // Clear all dynamic editors
@@ -734,20 +865,11 @@
           `;
           innerHtmlContent.appendChild(card);
           
-          // Create editor after DOM insertion
           setTimeout(() => {
             const editorEl = document.getElementById(`innerHTML_${idx}`);
             if (editorEl) {
               editorEl.value = formattedHtml;
-              const cm = CodeMirror.fromTextArea(editorEl, {
-                mode: 'htmlmixed',
-                lineNumbers: true,
-                theme: "neo",
-                lineWrapping: true,
-                readOnly: false,
-                indentUnit: 2,
-                tabSize: 2
-              });
+              const cm = CodeMirror.fromTextArea(editorEl, cmOptions('htmlmixed'));
               cm.setSize(null, editorHeight);
               editors[`innerHTML_${idx}`] = cm;
             }
@@ -767,15 +889,7 @@
           const formattedCss = formatCode(cssRules, 'css');
           const cssTextarea = document.getElementById('cssEditor');
           cssTextarea.value = formattedCss;
-          editors['css'] = CodeMirror.fromTextArea(cssTextarea, {
-            mode: 'css',
-            lineNumbers: true,
-            theme: "neo",
-            lineWrapping: true,
-            readOnly: false,
-            indentUnit: 2,
-            tabSize: 2
-          });
+          editors['css'] = CodeMirror.fromTextArea(cssTextarea, cmOptions('css'));
           editors['css'].setSize(null, "400px");
         }, 0);
       } else {
@@ -792,15 +906,7 @@
           const formattedJs = formatCode(pageFunction, 'javascript');
           const pfTextarea = document.getElementById('pageFunctionEditor');
           pfTextarea.value = formattedJs;
-          editors['pageFunction'] = CodeMirror.fromTextArea(pfTextarea, {
-            mode: 'javascript',
-            lineNumbers: true,
-            theme: "neo",
-            lineWrapping: true,
-            readOnly: false,
-            indentUnit: 2,
-            tabSize: 2
-          });
+          editors['pageFunction'] = CodeMirror.fromTextArea(pfTextarea, cmOptions('javascript'));
           editors['pageFunction'].setSize(null, "500px");
         }, 0);
       } else {
@@ -833,21 +939,12 @@
           `;
           beanEventsContent.appendChild(card);
           
-          // Create editor after DOM insertion
           setTimeout(() => {
             const editorEl = document.getElementById(`beanEvent_${idx}`);
             if (editorEl && event.eventFn) {
               const formattedJs = formatCode(event.eventFn, 'javascript');
               editorEl.value = formattedJs;
-              const cm = CodeMirror.fromTextArea(editorEl, {
-                mode: 'javascript',
-                lineNumbers: true,
-                theme: "neo",
-                lineWrapping: true,
-                readOnly: false,
-                indentUnit: 2,
-                tabSize: 2
-              });
+              const cm = CodeMirror.fromTextArea(editorEl, cmOptions('javascript'));
               cm.setSize(null, "400px");
               editors[`beanEvent_${idx}`] = cm;
             }
@@ -855,6 +952,14 @@
         });
       } else {
         beanEventsSection.classList.add('hidden');
+      }
+
+      // Collapse input section
+      const inputContent = document.getElementById('inputContent');
+      const inputChevron = document.getElementById('inputChevron');
+      if (inputContent.classList.contains('open')) {
+        inputContent.classList.remove('open');
+        inputChevron.classList.remove('rotated');
       }
 
       // Scroll to output
@@ -870,6 +975,15 @@
       document.getElementById('editorWrapper').classList.remove('editor-error');
       outputArea.classList.add('hidden');
       clearEditors();
+
+      // Re-expand input section
+      const inputContent = document.getElementById('inputContent');
+      const inputChevron = document.getElementById('inputChevron');
+      if (!inputContent.classList.contains('open')) {
+        inputContent.classList.add('open');
+        inputChevron.classList.add('rotated');
+        setTimeout(() => inputCm.refresh(), 100);
+      }
     });
 
     // Remove error state when user types
